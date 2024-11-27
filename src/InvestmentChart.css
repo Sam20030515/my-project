@@ -17,8 +17,8 @@
     padding: 2rem;
     border-radius: 8px;
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-    max-width: 800px;
-    width: 90%;
+    width: 95%;
+    max-width: 1800px;
     text-align: center;
 }
 
@@ -29,16 +29,28 @@
     text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.investment-chart-container img {
-    max-width: 100%;
-    height: auto;
-    border-radius: 8px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+.investment-chart-images {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* 2 columns */
+    gap: 1rem;
+    justify-content: center;
+    /* 更加統一的布局 */
+    margin-top: 1rem;
 }
 
-.investment-chart-container:hover img {
-    transform: scale(1.03);
+.investment-chart-images img {
+    width: 100%;
+    max-width: 100%;
+    /* 確保圖片保持原始比例 */
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
+}
+
+.investment-chart-images img:hover {
+    transform: scale(1.05);
+    /* 懸停放大效果 */
 }
 
 .investment-chart-container p {

@@ -29,32 +29,48 @@ select {
 /* Container */
 .layout-container {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 2rem;
+    /* 使用 flexbox */
+    justify-content: center;
+    /* 水平置中 */
+    align-items: center;
+    /* 垂直置中 */
+    height: center;
+    /* 占滿整個視窗高度 */
+    width: 80%;
+    /* 占滿整個視窗寬度 */
     padding: 1.5rem;
-    width: 90%;
-    max-width: 1200px;
     background: rgba(255, 255, 255, 0.9);
-    /* 背景半透明白色 */
+    /* 保持背景透明效果 */
     border-radius: 15px;
     box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    /* 其他樣式保持 */
 }
 
 /* Left Section (Form) */
 .form-container {
-    flex: 1;
-    max-width: 45%;
+    display: flex;
+    /* 使用 flexbox */
+    flex-direction: column;
+    /* 垂直排列內容 */
+    justify-content: center;
+    /* 內容垂直置中 */
+    align-items: center;
+    /* 內容水平置中 */
+    padding: 10rem;
+    width: 100%;
+    /* 自適應寬度 */
+    max-width: 500px;
+    /* 限制最大寬度 */
     background-color: #ffffff;
+    /* 白色背景 */
     border-radius: 10px;
-    padding: 1.5rem;
     box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 form {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 3rem;
 }
 
 label {

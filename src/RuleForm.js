@@ -15,6 +15,8 @@ function RuleForm() {
   const [rules, setRules] = useState([]);
   const [editingRule, setEditingRule] = useState(null);
   const [everyBuy, setEveryBuy] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('請稍後...');
   const navigate = useNavigate(); // 路由導航
 
 
@@ -91,6 +93,9 @@ function RuleForm() {
   };
 
   const handleExecuteAndRedirect = async () => {
+    setLoading(true); // 顯示請稍後彈窗
+    setLoadingMessage('你先別急 我處理一下'); // 可自定義顯示文字
+
     try {
       const response = await fetch('http://127.0.0.1:5000/run_script', {
         method: 'POST',
@@ -106,6 +111,8 @@ function RuleForm() {
     } catch (error) {
       console.error('Error:', error);
       window.alert('執行腳本時發生錯誤。');
+    } finally {
+      setLoading(false); // 無論成功與否，都隱藏「請稍後」彈窗
     }
   };
 
@@ -227,7 +234,7 @@ function RuleForm() {
                     placeholder="輸入停利百分比"
                   />
 
-                  <label>每次買入金額:</label> {/* 新增每次買入金額輸入框 */}
+                  <label>每次賣出金額:</label> {/* 新增每次賣出金額輸入框 */}
                   <input
                     type="number"
                     value={everyBuy}
@@ -239,6 +246,7 @@ function RuleForm() {
 
               {selectedStrategy === 'PE' && (
                 <>
+
                   <label>股票代號:</label> {/* 新增股票代號輸入框 */}
                   <input
                     type="text"
@@ -246,6 +254,7 @@ function RuleForm() {
                     onChange={(e) => setStockCode(e.target.value)}
                     placeholder="輸入股票代號"
                   />
+
 
                   <label>本益比:</label>
                   <input
@@ -269,9 +278,11 @@ function RuleForm() {
               )}
 
               <button type="submit">{editingRule ? '更新規則' : '提交規則'}</button>
-              <button type="button" onClick={handleExecuteAndRedirect} style={{ marginTop: '10px' }}>
-                執行結果
+              <button type="button" onClick={handleExecuteAndRedirect} disabled={loading}>
+                {loading ? '請稍後...' : '執行結果'}
               </button>
+
+
 
             </form>
           </div>
@@ -310,7 +321,16 @@ function RuleForm() {
           </div>
         </div>
       </div>
+      {/* 彈窗顯示「請稍後...」 */}
+      {loading && (
+        <div className="loading-overlay">
+          <div className="loading-popup">
+            <p>{loadingMessage}</p>
+          </div>
+        </div>
+      )}
     </div>
+    
   );
 }
 

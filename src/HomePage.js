@@ -5,6 +5,7 @@ import './HomePage.css';
 function HomePage() {
     const [slideUp, setSlideUp] = useState(false);
     const navigate = useNavigate(); // 初始化 useNavigate
+    const imagePath1 = "/logo192.png";
 
     const handleStartClick = () => {
         setSlideUp(true);
@@ -17,7 +18,8 @@ function HomePage() {
     return (
         <div className={`home-page ${slideUp ? 'slide-up' : ''}`}>
             <div className={`welcome-container ${slideUp ? 'hidden' : ''}`}>
-                <h1 className="welcome-title">歡迎使用投資模擬平台</h1>
+                <img src={imagePath1} alt="Action Transaction Price Chart" />
+                <h1 className="welcome-title">歡迎使用股神孵化器</h1>
                 <p className="welcome-subtitle">在這裡，您可以設計並測試您的投資策略</p>
                 <button className="start-button" onClick={handleStartClick}>
                     開始使用

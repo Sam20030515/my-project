@@ -245,3 +245,30 @@ button:hover {
   transition: transform 0.5s ease-out;
   /* 保持過渡效果 */
 }
+
+/* 顯示「請稍後...」的背景遮罩 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  /* 半透明背景 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+/* 彈窗內容 */
+.loading-popup {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  color:#000;
+  font-size: 18px;
+  font-weight: bold;
+}

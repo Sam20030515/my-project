@@ -39,6 +39,14 @@
     margin-bottom: 30px;
 }
 
+.welcome-container img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto 20px;
+    /* 置中圖片，並與文字保持間距 */
+}
+
 .start-button {
     padding: 15px 30px;
     font-size: 1.2rem;
