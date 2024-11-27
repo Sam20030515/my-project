@@ -1,0 +1,67 @@
+/* HomePage.css */
+
+.home-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    /* 讓高度占滿視窗 */
+    width: 100vw;
+    /* 讓寬度占滿視窗 */
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    /* 漸變背景 */
+    background-size: cover;
+    /* 使背景覆蓋整個視窗 */
+    background-position: center;
+    /* 背景置中 */
+    color: white;
+    transition: transform 0.5s ease-out;
+    /* 添加平滑的過渡效果 */
+}
+
+.home-page.slide-up {
+    transform: translateY(-100%);
+    /* 上滑的效果 */
+}
+
+.welcome-container {
+    text-align: center;
+}
+
+.welcome-title {
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.welcome-subtitle {
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+}
+
+.start-button {
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4facfe;
+    background-color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.3s;
+}
+
+.start-button:hover {
+    background-color: #e0f7ff;
+    transform: scale(1.05);
+}
+
+
+.home-page {
+    transition: transform 0.5s ease-out;
+    /* 上滑效果 */
+}
+
+.home-page.slide-up {
+    transform: translateY(-100%);
+}
