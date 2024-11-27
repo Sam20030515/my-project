@@ -173,7 +173,7 @@ def load_initial_funds(json_path):
 
 def main():
     # 讀取初始資金設定
-    user_json_path = r"C:\Users\user\invest\local_data\user.json"
+    user_json_path = r"C:\Users\allen\TopicCode\local_data\user.json"
     total_funds = load_initial_funds(user_json_path)
     if total_funds <= 0:
         return
