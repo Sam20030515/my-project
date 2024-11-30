@@ -2,21 +2,15 @@ from getStockInfo import getStockInfo
 import json
 from datetime import datetime, timedelta
 from pymongo import MongoClient
-import pymongo
 
 # MongoDB 連線設定 - 用來儲存投資記錄
 target_client = MongoClient("mongodb://localhost:27017/")
 target_db = target_client["investment_records"]
 target_collection = target_db["trade_records"]
 
-# MongoDB 連線設定 - 用來獲取股市資料
-stock_client = MongoClient("mongodb://localhost:27017/")
-db = stock_client["stock"]
-collection = db["stock_record"]
-
 def get_rules(greater_than_zero=True):
     """從 MongoDB 獲取所有指定策略的規則"""
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    client = MongoClient("mongodb://localhost:27017/")
     db = client["myDatabase"]  # 替換為你的資料庫名稱
     collection = db["rules"]  # 替換為你的集合名稱
 
@@ -50,10 +44,11 @@ def get_rules(greater_than_zero=True):
 def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, take_profit_percent, remaining_funds):
     current_date = start
     total_shares = 0  # 持有的總股數
-    buy_price = 0     # 買入價格
+    total_cost = 0    # 總成本（用於計算動態成本價）
 
     while current_date <= end:
-        stock_info_json = getStockInfo(current_date.strftime("%Y/%m/%d"), stock_code)
+        # 使用 getStockInfo.py 提供的接口獲取股票資訊
+        stock_info_json = getStockInfo("StopLossTakeProfit", current_date.strftime("%Y/%m/%d"), stock_code)
         try:
             stock_info = json.loads(stock_info_json)
         except json.JSONDecodeError:
@@ -67,32 +62,36 @@ def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, tak
             current_date += timedelta(days=1)
             continue
 
-        # 全額買入
+        # 動態計算停損與停利價格
+        if total_shares > 0:
+            average_cost_price = total_cost / total_shares  # 平均成本價
+            stop_loss_price = average_cost_price * (1 - stop_loss_percent / 100)
+            take_profit_price = average_cost_price * (1 + take_profit_percent / 100)
+        else:
+            stop_loss_price = take_profit_price = 0  # 無持倉時無需計算
+
+        # 全額買入（首次或在有剩餘資金時執行）
         if total_shares == 0 and remaining_funds > 0:
             shares = int(remaining_funds // current_stock_price)  # 計算可買入的股數
             if shares > 0:
-                total_shares = shares
                 investment = shares * current_stock_price  # 實際投入金額
                 remaining_funds -= investment  # 更新剩餘資金
-                buy_price = current_stock_price
+                total_shares += shares
+                total_cost += investment  # 更新總成本
 
-                print(f"在 {current_date.strftime('%Y/%m/%d')} 全額買入 {shares} 股，買入價格: {buy_price} 元")
+                print(f"在 {current_date.strftime('%Y/%m/%d')} 全額買入 {shares} 股，買入價格: {current_stock_price} 元")
                 trade_record = {
                     "stock_code": stock_code,
                     "action": "buy",
                     "shares": shares,
-                    "price_per_share": buy_price,
+                    "price_per_share": current_stock_price,
                     "total_investment": investment,
                     "date": current_date.strftime('%Y/%m/%d'),
-                    "remaining_funds": remaining_funds  # 記錄剩餘資金
+                    "remaining_funds": remaining_funds
                 }
                 target_collection.insert_one(trade_record)
 
-        # 停損和停利計算
-        stop_loss_price = buy_price * (1 - stop_loss_percent / 100)
-        take_profit_price = buy_price * (1 + take_profit_percent / 100)
-
-        # 達成停損或停利條件，賣出 EveryBuy 的量
+        # 停損或停利條件觸發
         if total_shares > 0 and (current_stock_price <= stop_loss_price or current_stock_price >= take_profit_price):
             sell_shares = int(every_buy // current_stock_price)  # 計算每次可賣出的股數
             if sell_shares > total_shares:
@@ -100,9 +99,10 @@ def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, tak
 
             if sell_shares > 0:
                 total_value = sell_shares * current_stock_price  # 賣出總值
-                total_shares -= sell_shares  # 更新剩餘股數
                 remaining_funds += total_value  # 更新剩餘資金
-                return_rate = (current_stock_price - buy_price) / buy_price * 100
+                total_shares -= sell_shares  # 更新剩餘股數
+                total_cost -= sell_shares * (total_cost / total_shares)  # 更新總成本
+                return_rate = (current_stock_price - (total_cost / total_shares)) / (total_cost / total_shares) * 100
 
                 print(f"在 {current_date.strftime('%Y/%m/%d')} 達成條件，賣出 {sell_shares} 股，價格: {current_stock_price} 元")
                 trade_record = {
@@ -114,7 +114,7 @@ def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, tak
                     "return_rate": return_rate,
                     "date": current_date.strftime('%Y/%m/%d'),
                     "remaining_shares": total_shares,
-                    "remaining_funds": remaining_funds  # 記錄剩餘資金
+                    "remaining_funds": remaining_funds
                 }
                 target_collection.insert_one(trade_record)
 
@@ -124,7 +124,7 @@ def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, tak
     # 持有情況記錄
     if total_shares > 0:
         total_value = total_shares * current_stock_price  # 現值
-        return_rate = (total_value - (total_shares * buy_price)) / (total_shares * buy_price) * 100
+        return_rate = (total_value - total_cost) / total_cost * 100
 
         print(f"持有結束: 在 {current_date.strftime('%Y/%m/%d')} 持有 {total_shares} 股，現值: {total_value} 元")
         trade_record = {
@@ -134,7 +134,7 @@ def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, tak
             "current_value": total_value,
             "return_rate": return_rate,
             "date": current_date.strftime('%Y/%m/%d'),
-            "remaining_funds": remaining_funds  # 記錄剩餘資金
+            "remaining_funds": remaining_funds
         }
         target_collection.insert_one(trade_record)
 
@@ -151,7 +151,7 @@ def load_initial_funds(json_path):
 
 def main():
     all_rules = get_rules()
-    user_json_path = r"C:\Users\user\invest\local_data\user.json"
+    user_json_path = r"C:\Users\allen\TopicCode\local_data\user.json"
     total_funds = load_initial_funds(user_json_path)
     if total_funds <= 0:
         print("初始資金無效或無法讀取，程序終止。")
