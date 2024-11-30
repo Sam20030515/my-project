@@ -76,8 +76,8 @@ def getStockInfo(strategy, date, stock_code):
         return json.dumps({"error": "Unsupported strategy."}, ensure_ascii=False, indent=4)
 
 # 測試
-# strategy = "DCA"
-# date = "2023/01/03"
-# stock_code = "2330"
-# result = getStockInfo(strategy, date, stock_code)
-# print(result)
+strategy = "DCA"
+date = "2023/07/06"
+stock_code = "2330"
+result = getStockInfo(strategy, date, stock_code)
+print(result)
