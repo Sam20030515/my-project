@@ -41,7 +41,7 @@ def get_rules(greater_than_zero=True):
 
     return rules
 
-def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, take_profit_percent, remaining_funds):
+def StopLossTakeProfit(start, end, id, stock_code, every_buy, stop_loss_percent, take_profit_percent, remaining_funds):
     current_date = start
     total_shares = 0  # 持有的總股數
     total_cost = 0    # 總成本（用於計算動態成本價）
@@ -81,6 +81,7 @@ def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, tak
 
                 print(f"在 {current_date.strftime('%Y/%m/%d')} 全額買入 {shares} 股，買入價格: {current_stock_price} 元")
                 trade_record = {
+                    "id":id,
                     "stock_code": stock_code,
                     "action": "buy",
                     "shares": shares,
@@ -92,7 +93,7 @@ def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, tak
                 target_collection.insert_one(trade_record)
 
         # 停損或停利條件觸發
-        if total_shares > 0 and (current_stock_price <= stop_loss_price or current_stock_price >= take_profit_price):
+        if total_shares > 0 and  current_stock_price >= take_profit_price:
             sell_shares = int(every_buy // current_stock_price)  # 計算每次可賣出的股數
             if sell_shares > total_shares:
                 sell_shares = total_shares  # 如果剩餘股數不足，全部賣出
@@ -106,8 +107,39 @@ def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, tak
 
                 print(f"在 {current_date.strftime('%Y/%m/%d')} 達成條件，賣出 {sell_shares} 股，價格: {current_stock_price} 元")
                 trade_record = {
+                    "id":id,
                     "stock_code": stock_code,
                     "action": "sell",
+                    "action-because":"take_profit",
+                    "shares": sell_shares,
+                    "price_per_share": current_stock_price,
+                    "total_value": total_value,
+                    "return_rate": return_rate,
+                    "date": current_date.strftime('%Y/%m/%d'),
+                    "remaining_shares": total_shares,
+                    "remaining_funds": remaining_funds
+                }
+                target_collection.insert_one(trade_record)
+
+        # 停損
+        if total_shares > 0 and current_stock_price <= stop_loss_price :
+            sell_shares = int(every_buy // current_stock_price)  # 計算每次可賣出的股數
+            if sell_shares > total_shares:
+                sell_shares = total_shares  # 如果剩餘股數不足，全部賣出
+
+            if sell_shares > 0:
+                total_value = sell_shares * current_stock_price  # 賣出總值
+                remaining_funds += total_value  # 更新剩餘資金
+                total_shares -= sell_shares  # 更新剩餘股數
+                total_cost -= sell_shares * (total_cost / total_shares)  # 更新總成本
+                return_rate = (current_stock_price - (total_cost / total_shares)) / (total_cost / total_shares) * 100
+
+                print(f"在 {current_date.strftime('%Y/%m/%d')} 達成條件，賣出 {sell_shares} 股，價格: {current_stock_price} 元")
+                trade_record = {
+                    "id":id,
+                    "stock_code": stock_code,
+                    "action": "sell",
+                    "action-because":"stop_loss",
                     "shares": sell_shares,
                     "price_per_share": current_stock_price,
                     "total_value": total_value,
@@ -128,6 +160,7 @@ def StopLossTakeProfit(start, end, stock_code, every_buy, stop_loss_percent, tak
 
         print(f"持有結束: 在 {current_date.strftime('%Y/%m/%d')} 持有 {total_shares} 股，現值: {total_value} 元")
         trade_record = {
+            "id":id,
             "stock_code": stock_code,
             "action": "hold",
             "shares": total_shares,
@@ -162,13 +195,14 @@ def main():
 
     remaining_funds = total_funds  # 初始化剩餘資金
     for rule in all_rules:
+        id = rule["id"]
         stock_code = rule["stock_code"]
         buy_value = rule["value"]["everyBuy"]
         stop_loss_percent = rule["value"]["stopLoss"]
         take_profit_percent = rule["value"]["takeProfit"]
 
         remaining_funds = StopLossTakeProfit(
-            investment_start, investment_end, stock_code, buy_value, stop_loss_percent, take_profit_percent, remaining_funds
+            investment_start, investment_end, id, stock_code, buy_value, stop_loss_percent, take_profit_percent, remaining_funds
         )
 
     # 最終記錄總剩餘資金
