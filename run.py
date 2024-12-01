@@ -23,7 +23,7 @@ def execute_strategy(strategy_name, rule):
 # 主程式
 def main():
     rules = get_rules()  # 取得所有規則
-    valid_strategies = ["DCA", "StopLossTakeProfit", "strategy3"]  # 合法策略清單
+    valid_strategies = ["DCA", "StopLossTakeProfit", "PE"]  # 合法策略清單
     
     for rule in rules:
         strategy_name = rule.get("strategy")
