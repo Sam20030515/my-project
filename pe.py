@@ -49,7 +49,7 @@ def get_user_data():
         user_data = json.load(f)
     return float(user_data.get("total_assets", 0))
 
-def PE_strategy(start, end, stock_code, pe_ratio, remaining_funds):
+def PE_strategy(start, end, rule_id, stock_code, pe_ratio, remaining_funds):
     current_date = start
     total_shares = 0
     total_cost = 0
@@ -83,6 +83,7 @@ def PE_strategy(start, end, stock_code, pe_ratio, remaining_funds):
 
                 print(f"{current_date.strftime('%Y/%m/%d')}: Buy {shares} shares at {closing_price}, fair price: {fair_price}")
                 target_collection.insert_one({
+                    "id": rule_id,
                     "stock_code": stock_code,
                     "action": "buy",
                     "shares": shares,
@@ -100,6 +101,7 @@ def PE_strategy(start, end, stock_code, pe_ratio, remaining_funds):
 
                 print(f"{current_date.strftime('%Y/%m/%d')}: Sell all shares at {closing_price}, fair price: {fair_price}")
                 target_collection.insert_one({
+                    "id": rule_id,
                     "stock_code": stock_code,
                     "action": "sell",
                     "shares": total_shares,
@@ -121,6 +123,7 @@ def PE_strategy(start, end, stock_code, pe_ratio, remaining_funds):
 
         print(f"End of simulation: Holding {total_shares} shares worth {total_value}")
         target_collection.insert_one({
+            "rule_id": rule_id,
             "stock_code": stock_code,
             "action": "hold",
             "shares": total_shares,
@@ -142,11 +145,12 @@ def main():
 
     remaining_funds = total_funds
     for rule in all_rules:
+        rule_id = rule["id"]
         stock_code = rule["stock_code"]
         pe_ratio = rule["pe_ratio"]
 
         remaining_funds = PE_strategy(
-            investment_start, investment_end, stock_code, pe_ratio, remaining_funds
+            investment_start, investment_end, rule_id, stock_code, pe_ratio, remaining_funds
         )
 
     print(f"Final remaining funds: {remaining_funds}")
