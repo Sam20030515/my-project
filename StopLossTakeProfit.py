@@ -5,8 +5,8 @@ from pymongo import MongoClient
 
 # MongoDB 連線設定 - 用來儲存投資記錄
 target_client = MongoClient("mongodb://localhost:27017/")
-target_db = target_client["investment_records"]
-target_collection = target_db["trade_records"]
+target_db = target_client["investment_db"]
+target_collection = target_db["investment_records"]
 
 def get_rules(greater_than_zero=True):
     """從 MongoDB 獲取所有指定策略的規則"""
@@ -184,7 +184,7 @@ def load_initial_funds(json_path):
 
 def main():
     all_rules = get_rules()
-    user_json_path = r"C:\Users\allen\TopicCode\local_data\user.json"
+    user_json_path = r"C:\Users\user\invest\local_data\user.json"
     total_funds = load_initial_funds(user_json_path)
     if total_funds <= 0:
         print("初始資金無效或無法讀取，程序終止。")

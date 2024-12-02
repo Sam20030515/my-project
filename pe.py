@@ -5,8 +5,8 @@ import json
 
 # MongoDB 連線設定 - 用來儲存投資記錄
 target_client = MongoClient("mongodb://localhost:27017/")
-target_db = target_client["investment_records"]
-target_collection = target_db["trade_records"]
+target_db = target_client["investment_db"]
+target_collection = target_db["investment_records"]
 
 def get_rules():
     """從 MongoDB 獲取 PE 策略的解釋規則
@@ -45,7 +45,7 @@ def calculate_fair_price(eps_data, pe_ratio, month):
 
 def get_user_data():
     """讀取用戶資金資訊"""
-    with open("C:\\Users\\allen\\TopicCode\\local_data\\user.json", "r", encoding="utf-8") as f:
+    with open("C:\\Users\\user\\invest\\local_data\\user.json", "r", encoding="utf-8") as f:
         user_data = json.load(f)
     return float(user_data.get("total_assets", 0))
 

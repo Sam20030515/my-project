@@ -127,7 +127,7 @@ def dca(start, end, day, input_type, value, stock_code, rule_id, remaining_funds
             # 建立交易記錄
             transaction = {
                 "id": rule_id,
-                "date": current_date.strftime("%Y-%m-%d"),
+                "date": current_date.strftime("%Y/%m/%d"),
                 "stock_code": stock_code,
                 "action": action,  # 增加 action（buy 或 sell）
                 "shares": total_shares,
@@ -173,7 +173,7 @@ def load_initial_funds(json_path):
 
 def main():
     # 讀取初始資金設定
-    user_json_path = r"C:\Users\allen\TopicCode\local_data\user.json"
+    user_json_path = r"C:\Users\user\invest\local_data\user.json"
     total_funds = load_initial_funds(user_json_path)
     if total_funds <= 0:
         return
