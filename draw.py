@@ -12,7 +12,10 @@ collection = db["investment_records"]
 try:
     # 執行查詢並轉換為 DataFrame
     query = {}
-    results = collection.find(query, {"_id": 0, "id": 1, "date": 1, "action": 1, "shares": 1, "total_investment": 1, "return_rate": 1, "stock_price": 1, "transaction_value": 1})
+    results = collection.find(query, {
+        "_id": 0, "id": 1, "date": 1, "action": 1, "shares": 1,
+        "total_investment": 1, "return_rate": 1, "stock_price": 1, "transaction_value": 1
+    })
     
     # 將查詢結果轉換為 DataFrame
     data = pd.DataFrame(results)
@@ -29,13 +32,18 @@ try:
     if not os.path.exists(static_folder):
         os.makedirs(static_folder)
 
-    # 獲取唯一策略數量
+    # 獲取唯一策略數量，過濾無效策略
     strategy_ids = data['id'].unique()
+    valid_strategy_ids = [strategy_id for strategy_id in strategy_ids if not data[data['id'] == strategy_id].empty]
 
-    # 動態生成子圖數量
-    fig, ax = plt.subplots(len(strategy_ids), 1, figsize=(12, 15), sharex=True)
+    # 動態生成子圖數量（僅繪製有效策略）
+    fig, ax = plt.subplots(len(valid_strategy_ids), 1, figsize=(12, 5 * len(valid_strategy_ids)), sharex=True)
 
-    for i, strategy_id in enumerate(strategy_ids):
+    # 如果只有一個策略，將 ax 轉換為列表
+    if len(valid_strategy_ids) == 1:
+        ax = [ax]
+
+    for i, strategy_id in enumerate(valid_strategy_ids):
         strategy_data = data[data['id'] == strategy_id]
         
         # 繪製 total_investment
@@ -52,8 +60,8 @@ try:
         ax[i].tick_params(axis='y', labelcolor='blue')
         ax2.tick_params(axis='y', labelcolor='green')
         
-        # 格式化 y 軸數字，將 total_investment 顯示為千分位
-        ax[i].yaxis.set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))  # 千分位格式
+        # 格式化 y 軸數字
+        ax[i].yaxis.set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))
 
         # 添加圖例
         ax[i].legend(loc='upper left')
@@ -63,33 +71,42 @@ try:
     plt.tight_layout()
     output_path = os.path.join(static_folder, "investment_and_shares.png")
     plt.savefig(output_path, dpi=300)
-    plt.close(fig)  # 關閉圖表以釋放記憶體
+    plt.close(fig)
 
     ### 繪製 action + transaction_value 的柱狀圖（不同策略不同顏色） ###
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    # 定義顏色列表，每個策略分配一個顏色
-    color_map = plt.cm.get_cmap('tab10')  # 使用 matplotlib 的顏色映射
-    strategy_colors = {strategy_id: color_map(i) for i, strategy_id in enumerate(data['id'].unique())}
+    # 定義顏色映射，並為買賣操作分配不同顏色
+    color_map = plt.colormaps['tab10']
+    strategy_colors = {strategy_id: color_map(i) for i, strategy_id in enumerate(valid_strategy_ids)}
 
-    # 按 id 分組，為每個策略繪製柱狀圖
-    for strategy_id, color in strategy_colors.items():
+    # 按策略分組繪製柱狀圖
+    for strategy_id in valid_strategy_ids:
         strategy_data = data[data['id'] == strategy_id]
 
-        # 繪製柱狀圖：買入為深色，賣出為淺色
-        colors = strategy_data['action'].apply(lambda x: color if x == 'buy' else (color[0], color[1], color[2], 0.4))  # 淺化顏色
-        ax.bar(strategy_data['date'], strategy_data['transaction_value'], color=colors, width=1, label=f'Strategy {strategy_id}')
+        # 分離買入和賣出資料
+        buy_data = strategy_data[strategy_data['action'] == 'buy']
+        sell_data = strategy_data[strategy_data['action'] == 'sell']
+
+        # 繪製買入柱狀圖（較深顏色）
+        ax.bar(buy_data['date'], buy_data['transaction_value'], color=strategy_colors[strategy_id], alpha=0.9, label=f'{strategy_id} - Buy', width=0.8)
+
+        # 繪製賣出柱狀圖（增加顏色變化）
+        sell_color = tuple(c * 0.6 for c in strategy_colors[strategy_id][:3])  # 降低亮度
+        ax.bar(sell_data['date'], sell_data['transaction_value'], color=sell_color, alpha=0.9, label=f'{strategy_id} - Sell', width=0.8)
 
     # 添加標籤和標題
-    ax.set_title('Transaction Price by Action and Strategy')
+    ax.set_title('Transaction Value by Action and Strategy')
     ax.set_xlabel('Date')
-    ax.set_ylabel('Transaction Price (NTD)')
-    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d'))  # 格式化日期
+    ax.set_ylabel('Transaction Value (NTD)')
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d'))
     plt.xticks(rotation=45)
     plt.grid(True)
 
-    # 添加圖例
-    plt.legend(loc='upper left', title='Strategies')
+    # 處理圖例：避免重複
+    handles, labels = ax.get_legend_handles_labels()
+    by_label = dict(zip(labels, handles))
+    ax.legend(by_label.values(), by_label.keys(), loc='upper left', title='Strategies')
 
     # 保存柱狀圖
     transaction_image_path = os.path.join(static_folder, 'action_transaction_price.png')
@@ -98,13 +115,11 @@ try:
     plt.close(fig)
 
     print(f"交易價格柱狀圖已儲存至 {transaction_image_path}")
-
     ### 繪製 stock_price 折線圖 ###
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    for strategy_id in data['id'].unique():
+    for strategy_id in valid_strategy_ids:
         strategy_data = data[data['id'] == strategy_id]
-
         # 繪製 stock_price 折線圖
         ax.plot(strategy_data['date'], strategy_data['stock_price'], marker='o', linestyle='-', 
                 label=f'Strategy {strategy_id} - Stock Price')
@@ -113,7 +128,7 @@ try:
     ax.set_title('Stock Price by Strategy')
     ax.set_xlabel('Date')
     ax.set_ylabel('Stock Price (NTD)')
-    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d'))  # 格式化日期
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d'))
     plt.xticks(rotation=45)
     plt.legend(loc='upper left')
     plt.grid(True)
@@ -124,16 +139,13 @@ try:
     plt.savefig(stock_price_image_path, dpi=300)
     plt.close(fig)
 
-    # print(f"投資圖表已儲存至 {investment_image_path}")
-    print(f"交易價格柱狀圖已儲存至 {transaction_image_path}")
     print(f"股價折線圖已儲存至 {stock_price_image_path}")
 
     ### 繪製報酬率折線圖 ###
     fig, ax = plt.subplots(figsize=(12, 6))
 
-    for strategy_id in data['id'].unique():
+    for strategy_id in valid_strategy_ids:
         strategy_data = data[data['id'] == strategy_id]
-
         # 繪製報酬率折線圖
         ax.plot(strategy_data['date'], strategy_data['return_rate'], marker='o', linestyle='-', 
                 label=f'Strategy {strategy_id} - Return Rate')
@@ -142,7 +154,7 @@ try:
     ax.set_title('Return Rate by Strategy')
     ax.set_xlabel('Date')
     ax.set_ylabel('Return Rate (%)')
-    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d'))  # 格式化日期
+    ax.xaxis.set_major_formatter(plt.matplotlib.dates.DateFormatter('%Y-%m-%d'))
     plt.xticks(rotation=45)
     plt.legend(loc='upper left')
     plt.grid(True)
@@ -156,6 +168,5 @@ try:
     print(f"報酬率折線圖已儲存至 {return_rate_image_path}")
 
 finally:
-    # 注意：清空資料庫操作應謹慎，通常在測試時使用！
     delete_result = collection.delete_many({})
     print(f"已刪除 {delete_result.deleted_count} 筆資料")
