@@ -73,3 +73,76 @@
 .home-page.slide-up {
     transform: translateY(-100%);
 }
+
+.rank-table {
+    margin-top: 20px;
+    text-align: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.rank-table h2 {
+    margin-bottom: 15px;
+    font-size: 1.8rem;
+    color: #4facfe;
+    background: linear-gradient(to right, #4facfe, #00f2fe);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.rank-table table {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    border-collapse: collapse;
+    font-size: 1rem;
+    color: #333;
+}
+
+.rank-table th,
+.rank-table td {
+    border: 1px solid #ddd;
+    padding: 12px 15px;
+    text-align: center;
+}
+
+.rank-table th {
+    background: #f0faff;
+    font-weight: bold;
+    color: #333;
+    text-transform: uppercase;
+    border-bottom: 2px solid #4facfe;
+}
+
+.rank-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.rank-table tr:nth-child(odd) {
+    background-color: #ffffff;
+}
+
+.rank-table tr:hover {
+    background-color: #e6f7ff;
+    transform: scale(1.01);
+    transition: transform 0.2s, background-color 0.3s;
+}
+
+.rank-table td {
+    font-size: 1rem;
+    border-radius: 5px;
+}
+
+.rank-table th:first-child,
+.rank-table td:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.rank-table th:last-child,
+.rank-table td:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}

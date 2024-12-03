@@ -57,7 +57,7 @@ function UserForm() {
             }
 
             if (response.ok) {
-                window.alert(editingUser ? '使用者資料已更新！' : '成功提交使用者數據！');
+                window.alert(editingUser ? '資料已更新！' : '成功提交數據！');
                 setEditingUser(null);
                 setUsername('');
                 setTotalAssets('');
@@ -66,7 +66,7 @@ function UserForm() {
             } else {
                 const result = await response.json();
                 console.error('Non-OK response:', response.status, response.statusText);
-                window.alert(`提交使用者數據時出錯：${response.statusText}`);
+                window.alert(`提交數據時出錯：${response.statusText}`);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -88,15 +88,15 @@ function UserForm() {
             });
 
             if (response.ok) {
-                window.alert('成功刪除使用者！');
+                window.alert('成功刪除！');
                 fetchUsers();
             } else {
                 console.error('Non-OK response:', response.status, response.statusText);
-                window.alert(`刪除使用者時出錯：${response.statusText}`);
+                window.alert(`刪除時出錯：${response.statusText}`);
             }
         } catch (error) {
             console.error('Error:', error);
-            window.alert('刪除使用者時發生錯誤。');
+            window.alert('刪除時發生錯誤。');
         }
     };
 
@@ -116,11 +116,11 @@ function UserForm() {
                 navigate('/ruleform'); // 跳轉至 ruleform 頁面，並攜帶使用者資料
             } else {
                 const errorResult = await response.json();
-                window.alert(`儲存使用者資料失敗：${errorResult.error}`);
+                window.alert(`儲存資料失敗：${errorResult.error}`);
             }
         } catch (error) {
             console.error('Error:', error);
-            window.alert('無法儲存使用者資料，請稍後再試。');
+            window.alert('無法儲存資料，請稍後再試。');
         }
     };
 
@@ -159,7 +159,7 @@ function UserForm() {
                             required
                         />
 
-                        <button type="submit">{editingUser ? '更新使用者' : '提交使用者'}</button>
+                        <button type="submit">{editingUser ? '更新' : '提交'}</button>
                     </form>
                 </div>
 

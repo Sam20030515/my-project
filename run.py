@@ -32,6 +32,7 @@ def main():
             execute_strategy(strategy_name, rule)
         else:
             print(f"未知或未支援的策略: {strategy_name}")
-
+# 繪製圖表（若需要）
+    subprocess.Popen(["python", "draw.py"])
 if __name__ == "__main__":
     main()

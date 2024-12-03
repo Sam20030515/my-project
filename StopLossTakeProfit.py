@@ -7,6 +7,8 @@ from pymongo import MongoClient
 target_client = MongoClient("mongodb://localhost:27017/")
 target_db = target_client["investment_db"]
 target_collection = target_db["investment_records"]
+target_collection1 = target_db["rank_records"]
+
 
 def get_rules(greater_than_zero=True):
     """從 MongoDB 獲取所有指定策略的規則"""
@@ -45,6 +47,8 @@ def StopLossTakeProfit(start, end, id, stock_code, every_buy, stop_loss_percent,
     current_date = start
     total_shares = 0  # 持有的總股數
     total_cost = 0    # 總成本（用於計算動態成本價）
+    all_investment = 0
+
 
     while current_date <= end:
         # 使用 getStockInfo.py 提供的接口獲取股票資訊
@@ -78,6 +82,7 @@ def StopLossTakeProfit(start, end, id, stock_code, every_buy, stop_loss_percent,
                 remaining_funds -= investment  # 更新剩餘資金
                 total_shares += shares
                 total_cost += investment  # 更新總成本
+                all_investment += investment
 
                 print(f"在 {current_date.strftime('%Y/%m/%d')} 全額買入 {shares} 股，買入價格: {current_stock_price} 元")
                 trade_record = {
@@ -86,7 +91,8 @@ def StopLossTakeProfit(start, end, id, stock_code, every_buy, stop_loss_percent,
                     "action": "buy",
                     "shares": shares,
                     "price_per_share": current_stock_price,
-                    "total_investment": investment,
+                    "total_investment": total_cost,
+                    "transaction_value":all_investment,
                     "date": current_date.strftime('%Y/%m/%d'),
                     "remaining_funds": remaining_funds
                 }
@@ -113,7 +119,8 @@ def StopLossTakeProfit(start, end, id, stock_code, every_buy, stop_loss_percent,
                     "action-because":"take_profit",
                     "shares": sell_shares,
                     "price_per_share": current_stock_price,
-                    "total_value": total_value,
+                    "total_investment": total_value,
+                    "transaction_value":all_investment,
                     "return_rate": return_rate,
                     "date": current_date.strftime('%Y/%m/%d'),
                     "remaining_shares": total_shares,
@@ -142,7 +149,8 @@ def StopLossTakeProfit(start, end, id, stock_code, every_buy, stop_loss_percent,
                     "action-because":"stop_loss",
                     "shares": sell_shares,
                     "price_per_share": current_stock_price,
-                    "total_value": total_value,
+                    "total_investment": total_value,
+                    "transaction_value":all_investment,
                     "return_rate": return_rate,
                     "date": current_date.strftime('%Y/%m/%d'),
                     "remaining_shares": total_shares,
@@ -165,13 +173,14 @@ def StopLossTakeProfit(start, end, id, stock_code, every_buy, stop_loss_percent,
             "action": "hold",
             "shares": total_shares,
             "current_value": total_value,
+            "transaction_value":all_investment,
             "return_rate": return_rate,
             "date": current_date.strftime('%Y/%m/%d'),
             "remaining_funds": remaining_funds
         }
         target_collection.insert_one(trade_record)
 
-    return remaining_funds
+    return remaining_funds, return_rate, id
 
 
 def load_initial_funds(json_path):
@@ -201,17 +210,21 @@ def main():
         stop_loss_percent = rule["value"]["stopLoss"]
         take_profit_percent = rule["value"]["takeProfit"]
 
-        remaining_funds = StopLossTakeProfit(
+        remaining_funds, return_rate, id= StopLossTakeProfit(
             investment_start, investment_end, id, stock_code, buy_value, stop_loss_percent, take_profit_percent, remaining_funds
         )
 
+    
+    print(f"最終剩餘資金: {remaining_funds} 元")
     # 最終記錄總剩餘資金
-    target_collection.insert_one({
-        "record_type": "final_funds",
+    target_collection1.insert_one({
+        "id":id,
+        "strategy": "StopLossTakeProfit",
         "remaining_funds": remaining_funds,
+        "return_rate": return_rate,
         "date": datetime.now().strftime('%Y/%m/%d'),
     })
-    print(f"最終剩餘資金: {remaining_funds} 元")
+
 
 if __name__ == "__main__":
     main()

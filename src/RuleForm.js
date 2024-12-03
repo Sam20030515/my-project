@@ -101,16 +101,16 @@ function RuleForm() {
         method: 'POST',
       });
       if (response.ok) {
-        window.alert('腳本執行成功！');
+        window.alert('執行成功！');
         navigate('/investment-chart'); // 跳轉到 InvestmentChart 頁面
       } else {
         const result = await response.json();
         console.error('Error executing script:', result);
-        window.alert('執行腳本時出錯，請稍後再試。');
+        window.alert('執行時出錯，請稍後再試。');
       }
     } catch (error) {
       console.error('Error:', error);
-      window.alert('執行腳本時發生錯誤。');
+      window.alert('執行時發生錯誤。');
     } finally {
       setLoading(false); // 無論成功與否，都隱藏「請稍後」彈窗
     }
@@ -168,7 +168,6 @@ function RuleForm() {
                 <option value="DCA">定期定額 (DCA)</option>
                 <option value="StopLossTakeProfit">停損停利</option>
                 <option value="PE">合理本益比</option>
-                <option value="TargetPrice">目標價格</option>
               </select>
 
               {/* 根據選擇顯示對應輸入框 */}
@@ -218,7 +217,7 @@ function RuleForm() {
                     placeholder="輸入股票代號"
                   />
 
-                  <label>停損值:</label>
+                  <label>停損值(%):</label>
                   <input
                     type="number"
                     value={stopLoss}
@@ -226,7 +225,7 @@ function RuleForm() {
                     placeholder="輸入停損百分比"
                   />
 
-                  <label>停利值:</label>
+                  <label>停利值(%):</label>
                   <input
                     type="number"
                     value={takeProfit}
@@ -239,7 +238,7 @@ function RuleForm() {
                     type="number"
                     value={everyBuy}
                     onChange={(e) => setEveryBuy(e.target.value)}
-                    placeholder="輸入每次買入金額"
+                    placeholder="輸入每次賣出金額"
                   />
                 </>
               )}
@@ -304,10 +303,10 @@ function RuleForm() {
                         ? `日期: ${rule.date}, ${rule.input_type === 'count' ? '股票數量' : '股票價格'
                         }: ${rule.value}`
                         : rule.strategy === 'StopLossTakeProfit'
-                        ? `停損值: ${rule.value.stopLoss}%, 停利值: ${rule.value.takeProfit}%, 每次買入金額: ${rule.value.everyBuy}`
-                        : rule.strategy === 'PE'
-                        ? `本益比: ${rule.value}`
-                        : `目標價格: ${rule.value}`}
+                          ? `停損值: ${rule.value.stopLoss}%, 停利值: ${rule.value.takeProfit}%, 每次賣出金額: ${rule.value.everyBuy}`
+                          : rule.strategy === 'PE'
+                            ? `本益比: ${rule.value}`
+                            : `目標價格: ${rule.value}`}
                     </span>
                     <div className="button-group">
                       <button onClick={() => handleEdit(rule)}>編輯</button>
@@ -330,7 +329,7 @@ function RuleForm() {
         </div>
       )}
     </div>
-    
+
   );
 }
 

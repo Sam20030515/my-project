@@ -8,13 +8,19 @@ import json
 
 app = Flask(__name__)
 CORS(app)
-app.config["MONGO_URI"] = "mongodb://localhost:27017/myDatabase"
-mongo = PyMongo(app)
+
+# 根據需求更改資料庫名稱
+def get_db_uri(database_name):
+    return f"mongodb://localhost:27017/{database_name}"
+
+# 兩個不同的資料庫
+mongo_db = PyMongo(app, uri=get_db_uri("myDatabase"))  # 默認資料庫
+mongo_db2 = PyMongo(app, uri=get_db_uri("investment_db"))  # 另一個資料庫
 
 # 初始化 n 變數，用來追蹤手動生成的 'id' 值
 def initialize_n():
     global n
-    last_rule = mongo.db.rules.find().sort("id", -1).limit(1)
+    last_rule = mongo_db.db.rules.find().sort("id", -1).limit(1)
     last_rule_list = list(last_rule)
     n = last_rule_list[0]['id'] if last_rule_list else 0
 
@@ -24,7 +30,7 @@ initialize_n()
 @app.route('/rules', methods=['GET'])
 def get_rules():
     try:
-        rules_cursor = mongo.db.rules.find()
+        rules_cursor = mongo_db.db.rules.find()
         result = []
         for rule in rules_cursor:
             result.append({
@@ -77,7 +83,7 @@ def add_rule():
         rule['value'] = value
 
     try:
-        rule_id = mongo.db.rules.insert_one(rule).inserted_id
+        rule_id = mongo_db.db.rules.insert_one(rule).inserted_id
         return jsonify({
             '_id': str(rule_id),
             'id': n,
@@ -122,7 +128,7 @@ def update_rule(id):
         update_data['value'] = value
 
     try:
-        result = mongo.db.rules.update_one({'id': id}, {'$set': update_data})
+        result = mongo_db.db.rules.update_one({'id': id}, {'$set': update_data})
         if result.modified_count > 0:
             return jsonify({'message': '規則已更新'})
         else:
@@ -133,7 +139,7 @@ def update_rule(id):
 # 路由：刪除規則
 @app.route('/rules/<int:id>', methods=['DELETE'])
 def delete_rule(id):
-    result = mongo.db.rules.delete_one({'id': id})
+    result = mongo_db.db.rules.delete_one({'id': id})
     if result.deleted_count > 0:
         return jsonify({'message': '規則已刪除'})
     else:
@@ -142,7 +148,7 @@ def delete_rule(id):
 # 初始化使用者的 id
 def initialize_user_id():
     global user_id
-    last_user = mongo.db.users.find().sort("id", -1).limit(1)
+    last_user = mongo_db.db.users.find().sort("id", -1).limit(1)
     last_user_list = list(last_user)
     user_id = last_user_list[0]['id'] if last_user_list else 0
 
@@ -152,7 +158,7 @@ initialize_user_id()
 @app.route('/users', methods=['GET'])
 def get_users():
     try:
-        users_cursor = mongo.db.users.find()
+        users_cursor = mongo_db.db.users.find()
         result = []
         for user in users_cursor:
             result.append({
@@ -185,7 +191,7 @@ def add_user():
     }
 
     try:
-        user_id_inserted = mongo.db.users.insert_one(user).inserted_id
+        user_id_inserted = mongo_db.db.users.insert_one(user).inserted_id
         return jsonify({
             '_id': str(user_id_inserted),
             'id': user_id,
@@ -194,7 +200,7 @@ def add_user():
             'monthly_investment': monthly_investment
         }), 201
     except Exception as e:
-        return jsonify({'error': f'新增使用者失敗: {str(e)}'}), 500
+        return jsonify({'error': f'新增失敗: {str(e)}'}), 500
 
 # 路由：更新使用者
 @app.route('/users/<int:id>', methods=['PUT'])
@@ -210,22 +216,22 @@ def update_user(id):
     }
 
     try:
-        result = mongo.db.users.update_one({'id': id}, {'$set': update_data})
+        result = mongo_db.db.users.update_one({'id': id}, {'$set': update_data})
         if result.modified_count > 0:
-            return jsonify({'message': '使用者已更新'})
+            return jsonify({'message': '已更新'})
         else:
-            return jsonify({'error': '找不到使用者或無變更'}), 404
+            return jsonify({'error': '找不到或無變更'}), 404
     except Exception as e:
-        return jsonify({'error': f'更新使用者失敗: {str(e)}'}), 500
+        return jsonify({'error': f'更新失敗: {str(e)}'}), 500
 
 # 路由：刪除使用者
 @app.route('/users/<int:id>', methods=['DELETE'])
 def delete_user(id):
-    result = mongo.db.users.delete_one({'id': id})
+    result = mongo_db.db.users.delete_one({'id': id})
     if result.deleted_count > 0:
-        return jsonify({'message': '使用者已刪除'})
+        return jsonify({'message': '已刪除'})
     else:
-        return jsonify({'error': '找不到使用者'}), 404
+        return jsonify({'error': '找不到'}), 404
 
 
 # 路由：將選擇的使用者存入本地檔案
@@ -243,20 +249,38 @@ def save_user():
         with open(file_path, 'w', encoding='utf-8') as file:
             json.dump(user_data, file, ensure_ascii=False, indent=4)
 
-        return jsonify({'message': f"使用者資料已儲存至 {file_path}"}), 200
+        return jsonify({'message': f"選擇成功"}), 200
     except Exception as e:
-        return jsonify({'error': f'儲存使用者資料失敗: {str(e)}'}), 500
+        return jsonify({'error': f'儲存失敗: {str(e)}'}), 500
 
 @app.route('/run_script', methods=['POST'])
 def run_script():
     try:
         # 執行 run.py 腳本
         subprocess.run(['python', 'run.py'], check=True)
-        return jsonify({'message': '腳本執行成功！'}), 200
+        return jsonify({'message': '執行成功！'}), 200
     except subprocess.CalledProcessError as e:
-        return jsonify({'error': f'腳本執行失敗: {str(e)}'}), 500
+        return jsonify({'error': f'執行失敗: {str(e)}'}), 500
     except Exception as e:
         return jsonify({'error': f'發生未知錯誤: {str(e)}'}), 500
+
+# 路由：獲取排行榜
+@app.route('/rank_records', methods=['GET'])
+def get_rank_records():
+    try:
+        # 從 rank_records 集合中獲取數據並按 return_rate 降序排序
+        rank_cursor = mongo_db2.db.rank_records.find().sort("return_rate", -1)
+        result = []
+        for record in rank_cursor:
+            result.append({
+                'rule_id': record['id'],         # 確保字段存在
+                'return_rate': record['return_rate']  # 確保字段存在
+            })
+        print("返回數據:", result)  # 添加調試打印
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({'error': f'獲取排行榜失敗: {str(e)}'}), 500
+
 
 
 
